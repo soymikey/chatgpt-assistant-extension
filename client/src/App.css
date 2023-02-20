@@ -27,9 +27,22 @@
 }
 .content {
 }
-.input-shortcut {
+.input-shortcut-wrapper {
+  display: flex;
   margin-top: 10px;
 }
+.input-shortcut {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+}
+.input-shortcut-edit {
+  width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .highlight-content-area {
   margin-top: 10px;
 }
@@ -40,4 +53,12 @@
   height: 30px;
   margin-left: 10px;
   margin-right: 10px;
+}
+.footer-button-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.shortcut-item {
+  word-break: break-word;
 }
