@@ -3,9 +3,12 @@ import cors from '@koa/cors';
 import bodyParser from 'koa-bodyparser'
 
 import { ChatGPTAPI } from 'chatgpt'
+import Stripe from 'stripe'
 
 import db from './db.js'
 const app = new Koa();
+
+const stripe = new Stripe('sk_test_51Bq0KgHIArwfBLFuAX7eaDOiPgKILjlavaSlZA3pDhtgPpc44pagdCYbtL1riZlrNXJfERZWoiJ0cSKSrpNWF6sJ001BhtV4Zi');
 
 const api = new ChatGPTAPI({
     apiKey: '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'
@@ -15,7 +18,7 @@ const mockApi = () => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
 
-            resolve({ text: '人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。' })
+            resolve({ text: '人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。' })
         }, 1000);
     });
 
@@ -46,7 +49,8 @@ app.use(async (ctx, next) => {
 
 app.use(async ctx => {
 
-    if (ctx.url === '/' && ctx.method === 'GET') {
+    //请求
+    if (ctx.request.path === '/' && ctx.method === 'GET') {
         try {
             const { input = '', content = '' } = ctx.query
             const question = `${input}\n${content}`
@@ -56,7 +60,25 @@ app.use(async ctx => {
         } catch (error) {
             ctx.body = 'Error, Try later';
         }
-    } else if (ctx.url === '/update' && ctx.method === 'POST') {
+    }
+    //支付-二期的时候再弄
+    else if (ctx.request.path === '/pay' && ctx.method === 'GET') {
+        try {
+            const { amount } = ctx.query
+            const result = await stripe.charges.create({
+                amount: amount,
+                currency: 'usd',
+                source: 'tok_visa', // replace with a valid test card token
+                description: 'Charge for $300'
+            });
+            ctx.body = result.amount;
+        } catch (error) {
+            console.log('error', error);
+            ctx.body = 'Error, Try later';
+        }
+    }
+    //更新shortcut
+    else if (ctx.request.path === '/update' && ctx.method === 'POST') {
         console.log('ctx.request.body', ctx.request.body);
         db.set("shortcutList", ctx.request.body.shortcutList)
         ctx.body = 'ok';

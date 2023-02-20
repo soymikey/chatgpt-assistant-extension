@@ -1,24 +1,43 @@
-.App {
+.assistant-app {
   position: fixed;
   height: 100%;
   width: 100%;
   z-index: 999999;
   top: 0;
-  background: gray;
 }
 
-.modal {
+.assistant-modal {
   position: absolute;
   top: 200px;
   left: 50%;
   transform: translate(-50%);
   width: 500px;
-  background: #93c5fd;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 2px;
+  overflow: hidden;
 }
 
 .header {
+  height: 30px;
+  margin-left: 10px;
+  margin-right: 10px;
+  display: flex;
+  justify-content: right;
 }
 .content {
 }
+.input-shortcut {
+  margin-top: 10px;
+}
+.highlight-content-area {
+  margin-top: 10px;
+}
+.assistant-textarea {
+  margin-top: 10px;
+}
 .footer {
+  height: 30px;
+  margin-left: 10px;
+  margin-right: 10px;
 }

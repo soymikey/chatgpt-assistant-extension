@@ -3,13 +3,16 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
+import { ConfigProvider } from "antd";
 
 const root = ReactDOM.createRoot(
   document.getElementById("assistant-modal") as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <App />
+    <ConfigProvider prefixCls="assistant">
+      <App />
+    </ConfigProvider>
   </React.StrictMode>
 );
 

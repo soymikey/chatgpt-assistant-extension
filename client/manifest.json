@@ -7,8 +7,20 @@
     "tabs",
     "activeTab",
     "scripting",
-    "storage"
+    "identity"
   ],
+  "oauth2": {
+    "client_id": "782545755178-hq387gkj6n7naccc1sf19mfuvmeg93c0.apps.googleusercontent.com",
+    "scopes": [
+      "email",
+      "profile"
+    ],
+    "response_type": "token",
+    "redirect_uri": "https://hkkidcmeagmplkgfjafhlckeckmodipj.chromiumapp.org/oauth2"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; script-src-elem 'self' 'unsafe-inline' https://music.yandex.ru/;"
+  },
   "action": {
     "default_popup": "index.html",
     "default_icon": "logo192.png"
