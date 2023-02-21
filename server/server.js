@@ -45,24 +45,61 @@ app.use(async (ctx, next) => {
     ctx.set('X-Response-Time', `${ms}ms`);
 });
 
+//model
+function successModel(data, message) {
+    const obj = { errno: 0 };
+    if (typeof data === "string") {
+        obj.message = data;
+        data = null;
+        message = null;
+    }
+    if (data) {
+        obj.data = data;
+    }
+    if (message) {
+        obj.message = message;
+    }
+    return obj;
+}
+function errorModel(data, message) {
+    const obj = { errno: -1 };
+    if (typeof data === "string") {
+        obj.message = data;
+        data = null;
+        message = null;
+    }
+    if (data) {
+        obj.data = data;
+    }
+    if (message) {
+        obj.message = message;
+    }
+    return obj;
+}
+
+
+
 // response
 
 app.use(async ctx => {
 
     //请求
-    if (ctx.request.path === '/' && ctx.method === 'GET') {
+    if (ctx.request.path === '/api/getAnswer' && ctx.method === 'POST') {
         try {
-            const { input = '', content = '' } = ctx.query
-            const question = `${input}\n${content}`
+
+            const { userInput = '', highlightContent = '' } = ctx.request.body
+
+            const questionContent = `${userInput}\n${highlightContent}`
+            console.log('问题:', questionContent);
             const res = await mockApi()
-            // const res = await api.sendMessage(question)
-            ctx.body = res.text;
+            // const res = await api.sendMessage(questionContent)
+            ctx.body = successModel(res)
         } catch (error) {
-            ctx.body = 'Error, Try later';
+            ctx.body = errorModel(error)
         }
     }
     //支付-二期的时候再弄
-    else if (ctx.request.path === '/pay' && ctx.method === 'GET') {
+    else if (ctx.request.path === '/apipay' && ctx.method === 'POST') {
         try {
             const { amount } = ctx.query
             const result = await stripe.charges.create({
@@ -77,11 +114,77 @@ app.use(async ctx => {
             ctx.body = 'Error, Try later';
         }
     }
-    //更新shortcut
-    else if (ctx.request.path === '/update' && ctx.method === 'POST') {
-        console.log('ctx.request.body', ctx.request.body);
-        db.set("shortcutList", ctx.request.body.shortcutList)
-        ctx.body = 'ok';
+
+    //  user数据结构
+    // const mockDB = {
+    //     123: {
+    //         username: 'Michael',
+    //         userId:123,
+    //         shortcutList: [{
+    //             id: "1",
+    //             title: "Ant1Ant1",
+    //         },
+    //         {
+    //             id: "2",
+    //             title: "Ant Design Title 2",
+    //         },
+    //         { id: "3", title: "Ant Design Title 3" },
+    //         { id: "4", title: "Ant Design Title 4" },]
+    //     }
+    // }
+
+
+
+    //测试接口
+    else if (ctx.request.path === '/api/getUser' && ctx.method === 'POST') {
+        try {
+
+            const { userId } = ctx.request.body
+            const userInfoDB = db.get(userId)
+            if (!userInfoDB) {
+                ctx.body = errorModel('user not found')
+                return
+            }
+            ctx.body = successModel(userInfoDB);
+        } catch (error) {
+            ctx.body = errorModel(error)
+        }
+    }
+    else if (ctx.request.path === '/api/updateUser' && ctx.method === 'POST') {
+
+        try {
+            console.log('ctx.request.body', ctx.request.body);
+
+            const body = ctx.request.body
+            const { userId } = body
+            const userInfoDB = db.get(userId)
+            if (!userInfoDB) {
+                ctx.body = errorModel('user not found')
+                return
+            }
+            db.set(userId, { ...userInfoDB, ...body })
+            ctx.body = successModel();
+        } catch (error) {
+            console.log('error', error);
+            ctx.body = errorModel(error)
+
+        }
+    }
+    else if (ctx.request.path === '/api/registerUser' && ctx.method === 'POST') {
+        try {
+            const body = ctx.request.body
+            const userId = body.userId
+            const userInfoDB = db.get(userId)
+            if (userInfoDB) {
+                ctx.body = errorModel('user already exist')
+                return
+            }
+            db.set(userId, body)
+            ctx.body = successModel();
+        } catch (error) {
+            ctx.body = errorModel(error)
+
+        }
     }
 
 
