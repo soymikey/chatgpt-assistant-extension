@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import axios from "axios";
 import {
   CloseCircleOutlined,
   SyncOutlined,
@@ -7,36 +6,31 @@ import {
 } from "@ant-design/icons";
 import { Button, Input, Spin, List, Divider } from "antd";
 import type { InputRef } from "antd";
+import {
+  HIGHLIGHTCONTENT,
+  HOMETITLE,
+  EDITTITLE,
+  CHATAPIERROR,
+} from "./constant";
 
-// import "antd/dist/reset.css";
 import "./App.css";
+import { CustomResponseType, ShortcutType, UserInfoType } from "./type";
+import { copyToClipboard, truncateString, uuidv4 } from "./tools";
+import API from "./baseApi";
 
 const { TextArea } = Input;
-
-const fetch = axios.create({
-  baseURL: "http://localhost:3001/api/",
-  timeout: 5000,
-  headers: { "X-Requested-With": "XMLHttpRequest" },
-});
-
-const HIGHLIGHTCONTENT = window.getSelection()?.toString()?.trim() || "";
-const HOMETITLE = "ChatGPT Assistant";
-const EDITTITLE = "Edit/Add prompt";
-type ShortcutType = { id: string; title: string };
-type ResponseType = { errno: number; data: any };
-type UserInfoType = { username: string; userId: string };
 
 function App() {
   const appRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputRef = useRef<InputRef>(null);
 
-  const [title, setTitle] = useState(HOMETITLE);
-  const [userInput, setUserInput] = useState("");
-  const [response, setResponse] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState(HOMETITLE); //标题
+  const [userInput, setUserInput] = useState(""); //用户输入
+  const [answer, setAnswer] = useState(""); //答案
+  const [loading, setLoading] = useState(false); //请求加载中
   const [isEdit, setIsEdit] = useState(false); //是否在剪辑快捷键
-  const [editId, setEditId] = useState("");
+  const [editId, setEditId] = useState(""); //编辑的快捷键id
 
   const [userInfo, setUserInfo] = useState<UserInfoType>({
     username: "",
@@ -61,7 +55,7 @@ function App() {
 
   async function getUserInfo() {
     try {
-      const { data } = await fetch.post<ResponseType>(`/getUser`, {
+      const { data } = await API.post<CustomResponseType>(`/getUser`, {
         userId: "123",
       });
       if (data.errno === -1) {
@@ -85,27 +79,22 @@ function App() {
     setUserInput(value);
   }
 
-  function inputEnterHandler() {
-    console.log("发送请求");
-    fetchAnswer();
-  }
-
   async function fetchAnswer() {
     try {
       setLoading(true);
-      const { data } = await fetch.post<ResponseType>("/getAnswer", {
+      const { data } = await API.post<CustomResponseType>("/getAnswer", {
         userInput,
         highlightContent,
       });
-      setResponse(data.data.text);
+      setAnswer(data.data.text);
     } catch (error) {
-      console.error(error);
+      setAnswer(CHATAPIERROR);
     } finally {
       setLoading(false);
     }
   }
 
-  function onChangeShortcutHandler(
+  function onChangeShortcutItemHandler(
     e: React.ChangeEvent<HTMLInputElement>,
     item: any
   ) {
@@ -117,26 +106,7 @@ function App() {
     setShortcutList([...shortcutList]);
   }
 
-  function truncateString(str: string, num: number) {
-    if (str.length > num) {
-      return str.substring(0, num) + "...";
-    } else {
-      return str;
-    }
-  }
-
-  function uuidv4() {
-    // @ts-ignore: Unreachable code error
-
-    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: any) =>
-      (
-        c ^
-        (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))
-      ).toString(16)
-    );
-  }
-
-  function onAddPromte() {
+  function onAddPromteHandler() {
     const hasEmptyValue =
       shortcutList.filter((i) => !i.title.trim()).length > 0;
 
@@ -145,23 +115,24 @@ function App() {
     setShortcutList([...shortcutList, { id, title: "" }]);
     setEditId(id);
   }
-  function onShortcutItemEdit(id: string) {
+
+  function onShortcutItemEditHandler(id: string) {
     if (editId === id) {
       setEditId("");
     } else {
       setEditId(id);
     }
   }
-  function onShortcutItemDelete(id: string) {
+  function onShortcutItemDeleteHandler(id: string) {
     const index = shortcutList.findIndex((d) => d.id === id);
     shortcutList.splice(index, 1);
     setShortcutList([...shortcutList]);
   }
-  async function onShortcutComplete() {
+  async function onShortcutCompleteHandler() {
     setEditId("");
     const shortcutList_ = shortcutList.filter((i) => i.title.trim());
     setShortcutList(shortcutList_);
-    const { data } = await fetch.post<ResponseType>(`/updateUser`, {
+    const { data } = await API.post<CustomResponseType>(`/updateUser`, {
       userId: userInfo.userId,
       shortcutList: shortcutList_,
     });
@@ -172,14 +143,11 @@ function App() {
     }
   }
 
-  function onEditHandler() {
+  function onClickEditItemHandler() {
     setIsEdit(true);
     setTitle(EDITTITLE);
   }
 
-  function copyToClipboard() {
-    navigator.clipboard.writeText(response);
-  }
   useEffect(() => {
     getUserInfo();
   }, []);
@@ -207,7 +175,7 @@ function App() {
                   ref={inputRef}
                   value={userInput}
                   onChange={inputChangeHandler}
-                  onPressEnter={inputEnterHandler}
+                  onPressEnter={fetchAnswer}
                 />
               </div>
               <div className="input-shortcut-wrapper">
@@ -227,7 +195,7 @@ function App() {
                 </div>
 
                 <div className="input-shortcut-edit">
-                  <Button type="link" onClick={onEditHandler}>
+                  <Button type="link" onClick={onClickEditItemHandler}>
                     {shortcutList.length ? "Edit" : "Add"}
                   </Button>
                 </div>
@@ -257,13 +225,13 @@ function App() {
                   </div>
                   <div className="assistant-textarea-title-right">
                     <SyncOutlined onClick={fetchAnswer} />
-                    <CopyOutlined onClick={copyToClipboard} />
+                    <CopyOutlined onClick={() => copyToClipboard(answer)} />
                   </div>
                 </div>
                 <TextArea
                   ref={textareaRef}
                   rows={8}
-                  value={response}
+                  value={answer}
                   readOnly
                   placeholder="Type your question above and press enter"
                 />
@@ -281,7 +249,7 @@ function App() {
                         type="link"
                         size="small"
                         onClick={() => {
-                          onShortcutItemEdit(item.id);
+                          onShortcutItemEditHandler(item.id);
                         }}
                       >
                         {editId === item.id ? "Finish" : "Edit"}
@@ -291,7 +259,7 @@ function App() {
                         size="small"
                         danger
                         onClick={() => {
-                          onShortcutItemDelete(item.id);
+                          onShortcutItemDeleteHandler(item.id);
                         }}
                       >
                         Delete
@@ -308,7 +276,7 @@ function App() {
                       <Input
                         placeholder="Add your Shortcut"
                         value={item.title}
-                        onChange={(e) => onChangeShortcutHandler(e, item)}
+                        onChange={(e) => onChangeShortcutItemHandler(e, item)}
                       />
                     )}
                   </List.Item>
@@ -321,8 +289,8 @@ function App() {
           <div className="assistant-footer">
             {isEdit && (
               <div className="footer-button-wrapper">
-                <Button onClick={onAddPromte}>Add Prompt</Button>
-                <Button type="primary" onClick={onShortcutComplete}>
+                <Button onClick={onAddPromteHandler}>Add Prompt</Button>
+                <Button type="primary" onClick={onShortcutCompleteHandler}>
                   Complete
                 </Button>
               </div>

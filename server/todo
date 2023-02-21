@@ -1,0 +1,19 @@
+支付的代码
+// import Stripe from 'stripe'
+// const stripe = new Stripe(config.stripeAPI);
+//支付-二期的时候再弄
+// else if (ctx.request.path === '/apipay' && ctx.method === 'POST') {
+//     try {
+//         const { amount } = ctx.query
+//         const result = await stripe.charges.create({
+//             amount: amount,
+//             currency: 'usd',
+//             source: 'tok_visa', // replace with a valid test card token
+//             description: 'Charge for $300'
+//         });
+//         ctx.body = result.amount;
+//     } catch (error) {
+//         console.log('error', error);
+//         ctx.body = 'Error, Try later';
+//     }
+// }

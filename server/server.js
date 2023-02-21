@@ -1,42 +1,65 @@
 import Koa from 'koa';
 import cors from '@koa/cors';
 import bodyParser from 'koa-bodyparser'
+import onerror from 'koa-onerror'
+import morgan from "koa-morgan";
+import path from "path";
 
 import { ChatGPTAPI } from 'chatgpt'
-import Stripe from 'stripe'
+import fs from "fs";
 
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+
+const __dirname = path.dirname(__filename);
+
+import config from './config.js'
 import db from './db.js'
+import { errorModel, successModel } from './tools.js';
 const app = new Koa();
 
-const stripe = new Stripe('sk_test_51Bq0KgHIArwfBLFuAX7eaDOiPgKILjlavaSlZA3pDhtgPpc44pagdCYbtL1riZlrNXJfERZWoiJ0cSKSrpNWF6sJ001BhtV4Zi');
 
 const api = new ChatGPTAPI({
-    apiKey: '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'
+    apiKey: config.chatGPTAPI
 })
 
 const mockApi = () => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
-
             resolve({ text: '人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。' })
         }, 1000);
     });
 
 }
 
-
+//跨域控制
+// app.use(async (ctx, next) => {
+//     ctx.set('Access-Control-Allow-Origin', 'https://streetmusicadmin.migaox.com');
+//     await next();
+//   });
 app.use(cors());
-app.use(bodyParser());
+// error handler
+onerror(app);
+// middlewares
+app.use(
+    bodyParser({
+        enableTypes: ["json", "form", "text"],
+        extendTypes: {
+            text: ['text/xml', 'application/xml']
+        }
+    })
+);
 
-// logger
-
-app.use(async (ctx, next) => {
-    await next();
-    const rt = ctx.response.get('X-Response-Time');
-    console.log(`${ctx.method} ${ctx.url} - ${rt}`);
+const logFileName = path.join(__dirname, "logs", "access.log");
+const writeStream = fs.createWriteStream(logFileName, {
+    flags: "a",
 });
+app.use(
+    morgan("combined", {
+        stream: writeStream,
+    })
+);
 
-// x-response-time
 
 app.use(async (ctx, next) => {
     const start = Date.now();
@@ -45,37 +68,6 @@ app.use(async (ctx, next) => {
     ctx.set('X-Response-Time', `${ms}ms`);
 });
 
-//model
-function successModel(data, message) {
-    const obj = { errno: 0 };
-    if (typeof data === "string") {
-        obj.message = data;
-        data = null;
-        message = null;
-    }
-    if (data) {
-        obj.data = data;
-    }
-    if (message) {
-        obj.message = message;
-    }
-    return obj;
-}
-function errorModel(data, message) {
-    const obj = { errno: -1 };
-    if (typeof data === "string") {
-        obj.message = data;
-        data = null;
-        message = null;
-    }
-    if (data) {
-        obj.data = data;
-    }
-    if (message) {
-        obj.message = message;
-    }
-    return obj;
-}
 
 
 
@@ -86,34 +78,19 @@ app.use(async ctx => {
     //请求
     if (ctx.request.path === '/api/getAnswer' && ctx.method === 'POST') {
         try {
-
             const { userInput = '', highlightContent = '' } = ctx.request.body
-
             const questionContent = `${userInput}\n${highlightContent}`
             console.log('问题:', questionContent);
-            const res = await mockApi()
-            // const res = await api.sendMessage(questionContent)
+            // const res = await mockApi()
+            const res = await api.sendMessage(questionContent)
             ctx.body = successModel(res)
         } catch (error) {
+            console.log('error1:', error);
+            console.log('error1 Object key:', Object.keys(error));
             ctx.body = errorModel(error)
         }
     }
-    //支付-二期的时候再弄
-    else if (ctx.request.path === '/apipay' && ctx.method === 'POST') {
-        try {
-            const { amount } = ctx.query
-            const result = await stripe.charges.create({
-                amount: amount,
-                currency: 'usd',
-                source: 'tok_visa', // replace with a valid test card token
-                description: 'Charge for $300'
-            });
-            ctx.body = result.amount;
-        } catch (error) {
-            console.log('error', error);
-            ctx.body = 'Error, Try later';
-        }
-    }
+
 
     //  user数据结构
     // const mockDB = {
@@ -135,7 +112,7 @@ app.use(async ctx => {
 
 
 
-    //测试接口
+    //用户接口
     else if (ctx.request.path === '/api/getUser' && ctx.method === 'POST') {
         try {
 
