@@ -7,7 +7,8 @@
     "tabs",
     "activeTab",
     "scripting",
-    "identity"
+    "identity",
+    "contextMenus"
   ],
   "oauth2": {
     "client_id": "782545755178-hq387gkj6n7naccc1sf19mfuvmeg93c0.apps.googleusercontent.com",
