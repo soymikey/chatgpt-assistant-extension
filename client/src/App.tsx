@@ -46,10 +46,7 @@ function App() {
     setHighlightContent(value);
   }
   function removeApp() {
-    const modalDiv = document.getElementById(
-      "assistant-modal"
-    ) as HTMLDivElement;
-    modalDiv.style.display = "none";
+    appRef.current?.remove();
   }
 
   function insideClick(e: any) {
@@ -154,6 +151,8 @@ function App() {
   useEffect(() => {
     getUserInfo();
   }, []);
+  // @ts-ignore: Unreachable code error
+  console.log("参数:", window.name);
 
   return (
     <div id="chatgpt-assistant-app" ref={appRef} onMouseDown={removeApp}>
@@ -288,7 +287,6 @@ function App() {
             </div>
           )}
           <Divider style={{ margin: "5px 0px" }} />
-
           <div className="assistant-footer">
             {isEdit && (
               <div className="footer-button-wrapper">

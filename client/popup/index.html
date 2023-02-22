@@ -8,12 +8,25 @@
       name="description"
       content="Web site created using create-react-app"
     />
-
+    <link rel="stylesheet" href="popup.css" />
     <title>Assistant-chatGPT-extension</title>
   </head>
   <body>
-    <div id="assistant-modal">我是pop up</div>
-    <button id="login-button">Login with Google</button>
+    <div id="popup">
+      <div class="title">
+        <div class="title-left">ChatGPT-Assistant</div>
+        <div class="title-right">powered by Mike</div>
+      </div>
+      <div>
+        <button class="change-shortcut">Change Shortcut</button>
+      </div>
+      <div class="login-wrapper">
+        <button class="login-button">Login with Google</button>
+      </div>
+      <!-- <button id="reload">Reload</button>
+      <button id="button">测试和background通信</button> -->
+    </div>
+    <!-- 不可以直接写script里面， 所有脚本都需要写在popup.js里面 -->
     <script src="popup.js"></script>
   </body>
 </html>

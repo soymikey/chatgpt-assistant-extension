@@ -25,7 +25,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && mv build/static/js/main*.js build/static/js/main.min.js && mv build/static/css/main*.css build/static/css/main.min.css && rm build/index.html && npm run extension",
-    "extension": "cp manifest.json build/manifest.json && cp background.js build/background.js && cp contentScript.js build/contentScript.js && cp popup/popup.js build/popup.js && cp popup/index.html build/index.html",
+    "extension": "cp manifest.json build/manifest.json && cp background.js build/background.js && cp contentScript.js build/contentScript.js && cp popup/* build/",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

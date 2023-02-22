@@ -27,19 +27,12 @@
     "default_icon": "logo192.png"
   },
   "commands": {
-    "_execute_action": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+F",
-        "mac": "MacCtrl+Shift+F"
-      },
-      "description": "Opens index.html"
-    },
     "show-modal": {
       "suggested_key": {
-        "default": "Ctrl+Shift+Y",
-        "mac": "MacCtrl+Shift+Y"
+        "default": "Ctrl+N",
+        "mac": "Command+N"
       },
-      "description": "Show modal with selected text"
+      "description": "Active ChatGPT-Assistant Extension"
     }
   },
   "background": {
