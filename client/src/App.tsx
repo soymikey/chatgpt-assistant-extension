@@ -46,7 +46,10 @@ function App() {
     setHighlightContent(value);
   }
   function removeApp() {
-    appRef.current!.remove();
+    const modalDiv = document.getElementById(
+      "assistant-modal"
+    ) as HTMLDivElement;
+    modalDiv.style.display = "none";
   }
 
   function insideClick(e: any) {
@@ -153,7 +156,7 @@ function App() {
   }, []);
 
   return (
-    <div className="assistant-app" ref={appRef} onMouseDown={removeApp}>
+    <div id="chatgpt-assistant-app" ref={appRef} onMouseDown={removeApp}>
       <div className="assistant-modal" onMouseDown={insideClick}>
         <Spin spinning={loading}>
           <div className="assistant-header">
