@@ -3,7 +3,7 @@ import config from "./config";
 
 const API = axios.create({
   baseURL: config.baseURL,
-  timeout: config.timeout,
+  // timeout: config.timeout,
   headers: { "X-Requested-With": "XMLHttpRequest" },
 });
 

@@ -80,9 +80,12 @@ app.use(async ctx => {
         try {
             const { userInput = '', highlightContent = '' } = ctx.request.body
             const questionContent = `${userInput}\n${highlightContent}`
-            console.log('问题:', questionContent);
+            console.log('问题:==========================================',);
+            console.log(questionContent);
+            console.log("==========================================");
             // const res = await mockApi()
             const res = await api.sendMessage(questionContent)
+            console.log("答案:", res.text);
             ctx.body = successModel(res)
         } catch (error) {
             console.log('error1:', error);
