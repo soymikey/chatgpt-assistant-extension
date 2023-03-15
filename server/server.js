@@ -4,23 +4,63 @@ import bodyParser from 'koa-bodyparser'
 import onerror from 'koa-onerror'
 import morgan from "koa-morgan";
 import path from "path";
+import Sequelize from 'sequelize';
+import { v4 as uuidv4 } from 'uuid';
 
 import { ChatGPTAPI } from 'chatgpt'
 import fs from "fs";
 
 import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
-
 const __dirname = path.dirname(__filename);
+
 
 import config from './config.js'
 import db from './db.js'
 import { errorModel, successModel } from './tools.js';
 const app = new Koa();
-
-
 const api = new ChatGPTAPI({
     apiKey: config.chatGPTAPI
+})
+
+// 初始化 Sequelize 实例
+const sequelize = new Sequelize('chatgpt-assistant', 'root', 'yoursecurepassword', {
+    host: 'localhost',
+    dialect: 'mysql',
+    port: 3306
+});
+// // 测试数据库连接
+// async function testConnection() {
+//     try {
+//         await sequelize.authenticate();
+//         console.log('Connection has been established successfully.');
+//     } catch (error) {
+//         console.error('Unable to connect to the database:', error);
+//     }
+// }
+
+// // 调用测试连接函数
+// testConnection();
+
+// 定义 test 模型
+const Test = sequelize.define('Test', {
+    name: Sequelize.STRING
+}, {
+    tableName: 'tests'
+})
+// 定义 User 模型
+const User = sequelize.define('User', {
+    id: Sequelize.STRING,
+    email: Sequelize.STRING,
+    email_verified: Sequelize.BOOLEAN,
+    family_name: Sequelize.STRING,
+    given_name: Sequelize.STRING,
+    locale: Sequelize.STRING,
+    name: Sequelize.STRING,
+    picture: Sequelize.STRING,
+    sub: { type: Sequelize.STRING, primaryKey: true }
+}, {
+    tableName: 'users'
 })
 
 const mockApi = () => {
@@ -83,85 +123,99 @@ app.use(async ctx => {
             console.log('问题:==========================================',);
             console.log(questionContent);
             console.log("==========================================");
-            // const res = await mockApi()
-            const res = await api.sendMessage(questionContent)
+            const res = await mockApi()
+            // const res = await api.sendMessage(questionContent)
             console.log("答案:", res.text);
             ctx.body = successModel(res)
         } catch (error) {
-            console.log('error1:', error);
-            console.log('error1 Object key:', Object.keys(error));
+            console.log('获取答案Error:', error);
             ctx.body = errorModel(error)
         }
     }
 
 
-    //  user数据结构
-    // const mockDB = {
-    //     123: {
-    //         username: 'Michael',
-    //         userId:123,
-    //         shortcutList: [{
-    //             id: "1",
-    //             title: "Ant1Ant1",
-    //         },
-    //         {
-    //             id: "2",
-    //             title: "Ant Design Title 2",
-    //         },
-    //         { id: "3", title: "Ant Design Title 3" },
-    //         { id: "4", title: "Ant Design Title 4" },]
-    //     }
-    // }
 
 
 
     //用户接口
-    else if (ctx.request.path === '/api/getUser' && ctx.method === 'POST') {
+    //查找用户
+    else if (ctx.request.path === '/api/user/get' && ctx.method === 'POST') {
         try {
 
-            const { userId } = ctx.request.body
-            const userInfoDB = db.get(userId)
-            if (!userInfoDB) {
-                ctx.body = errorModel('user not found')
+            const { sub } = ctx.request.body
+            const user = await User.findOne({ where: { sub } });
+            if (!user) {
+                ctx.body = errorModel('User does not exist.')
                 return
             }
-            ctx.body = successModel(userInfoDB);
+            ctx.body = successModel(user);
         } catch (error) {
+            console.log('查找用户Error:', error);
             ctx.body = errorModel(error)
         }
     }
-    else if (ctx.request.path === '/api/updateUser' && ctx.method === 'POST') {
+    // 更新用户
+    else if (ctx.request.path === '/api/user/update' && ctx.method === 'POST') {
 
         try {
-            console.log('ctx.request.body', ctx.request.body);
-
-            const body = ctx.request.body
-            const { userId } = body
-            const userInfoDB = db.get(userId)
-            if (!userInfoDB) {
-                ctx.body = errorModel('user not found')
-                return
-            }
-            db.set(userId, { ...userInfoDB, ...body })
+            const { sub, name } = ctx.request.body
+            const user = await User.findOne({ where: { sub } });
+            user.name = name;
+            await user.save();
             ctx.body = successModel();
         } catch (error) {
-            console.log('error', error);
+            console.log('更新用户Error:', error);
             ctx.body = errorModel(error)
 
         }
     }
-    else if (ctx.request.path === '/api/registerUser' && ctx.method === 'POST') {
+    //删除用户
+    else if (ctx.request.path === '/api/user/delete' && ctx.method === 'POST') {
+
         try {
-            const body = ctx.request.body
-            const userId = body.userId
-            const userInfoDB = db.get(userId)
-            if (userInfoDB) {
-                ctx.body = errorModel('user already exist')
-                return
-            }
-            db.set(userId, body)
+            const { sub } = ctx.request.body
+            await User.destroy({ where: { sub } });
+
             ctx.body = successModel();
         } catch (error) {
+            console.log('删除用户Error:', error);
+
+            ctx.body = errorModel(error)
+
+        }
+    }
+
+    //插入用户
+    else if (ctx.request.path === '/api/user/create' && ctx.method === 'POST') {
+        try {
+            const {
+                sub,
+                name,
+                given_name,
+                family_name,
+                picture,
+                email,
+                locale, email_verified
+            } = ctx.request.body
+            const userExist = await User.findOne({ where: { sub } });
+            if (!userExist) {
+
+                await User.create({
+                    email,
+                    email_verified: email_verified ? 1 : 0,
+                    family_name,
+                    given_name,
+                    locale,
+                    name,
+                    picture,
+                    sub,
+                    id: uuidv4(),
+                })
+            }
+            ctx.body = successModel();
+        } catch (error) {
+            console.log('插入用户Error:', error);
+
             ctx.body = errorModel(error)
 
         }

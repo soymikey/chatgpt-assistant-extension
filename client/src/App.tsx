@@ -151,8 +151,6 @@ function App() {
   useEffect(() => {
     getUserInfo();
   }, []);
-  // @ts-ignore: Unreachable code error
-  console.log("参数:", window.name);
 
   return (
     <div id="chatgpt-assistant-app" ref={appRef} onMouseDown={removeApp}>

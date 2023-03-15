@@ -20,7 +20,7 @@
     "redirect_uri": "https://hkkidcmeagmplkgfjafhlckeckmodipj.chromiumapp.org/oauth2"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; script-src-elem 'self' 'unsafe-inline' https://music.yandex.ru/;"
+    "extension_pages": "script-src 'self'; object-src 'self'; script-src-elem 'self' 'unsafe-inline'"
   },
   "action": {
     "default_popup": "index.html",
@@ -29,8 +29,8 @@
   "commands": {
     "show-modal": {
       "suggested_key": {
-        "default": "Ctrl+N",
-        "mac": "Command+N"
+        "default": "Ctrl+B",
+        "mac": "Command+B"
       },
       "description": "Active ChatGPT-Assistant Extension"
     }
