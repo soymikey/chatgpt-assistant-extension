@@ -3,6 +3,14 @@
 
 
 console.log("popup loaded");
+//常量
+const LOGIN = "LOGIN"
+const LOGOUT = "LOGOUT"
+const LOGINSTATUS = 'LOGINSTATUS'
+const NOTLOGIN = 'NOTLOGIN'
+const UNKNOWN = 'UNKNOWN'
+
+
 //工具类函数
 async function sendToBackground(payload) {
     const { type = 'UNKNOWN', data = {} } = payload
@@ -22,15 +30,15 @@ const userInfoElement = document.getElementsByClassName('userinfo-wrapper')[0]
 
 //监听登录
 loginButton.addEventListener("click", async () => {
-    const { isLogin } = await sendToBackground({ type: "LOGINSTATUS" })
+    const { isLogin } = await sendToBackground({ type: LOGINSTATUS })
     console.log('登录状态:', isLogin);
     if (isLogin) {
-        await sendToBackground({ type: "LOGOUT" })
+        await sendToBackground({ type: LOGOUT })
         userInfoElement.innerHTML = ''
         loginButton.innerHTML = 'Login with Google'
         loginButton.classList.remove('logout')
     } else {
-        const loginResult = await sendToBackground({ type: "LOGIN" })
+        const loginResult = await sendToBackground({ type: LOGIN })
         userInfoElement.innerHTML = loginResult.userInfo.name
         loginButton.innerHTML = 'Logout'
         loginButton.classList.add('logout')
@@ -41,7 +49,7 @@ loginButton.addEventListener("click", async () => {
 
 //初始化popup页面状态
 async function init() {
-    const { isLogin, userInfo } = await sendToBackground({ type: "LOGINSTATUS" });
+    const { isLogin, userInfo } = await sendToBackground({ type: LOGINSTATUS });
     loginButton.innerHTML = isLogin ? 'Logout' : 'Login with Google'
     if (isLogin) {
         userInfoElement.innerHTML = userInfo.name

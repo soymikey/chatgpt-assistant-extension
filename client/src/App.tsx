@@ -149,6 +149,7 @@ function App() {
   }
 
   useEffect(() => {
+    inputRef.current!.focus();
     getUserInfo();
   }, []);
 
