@@ -29,25 +29,25 @@ const sequelize = new Sequelize('chatgpt-assistant', 'root', 'yoursecurepassword
     dialect: 'mysql',
     port: 3306
 });
-// // 测试数据库连接
-// async function testConnection() {
-//     try {
-//         await sequelize.authenticate();
-//         console.log('Connection has been established successfully.');
-//     } catch (error) {
-//         console.error('Unable to connect to the database:', error);
-//     }
-// }
+// 测试数据库连接
+async function testConnection() {
+    try {
+        await sequelize.authenticate();
+        console.log('Connection has been established successfully.');
+    } catch (error) {
+        console.error('Unable to connect to the database:', error);
+    }
+}
 
-// // 调用测试连接函数
-// testConnection();
+// 调用测试连接函数
+testConnection();
 
 // 定义 test 模型
-const Test = sequelize.define('Test', {
-    name: Sequelize.STRING
-}, {
-    tableName: 'tests'
-})
+// const Test = sequelize.define('Test', {
+//     name: Sequelize.STRING
+// }, {
+//     tableName: 'tests'
+// })
 // 定义 User 模型
 const User = sequelize.define('User', {
     id: Sequelize.STRING,
@@ -61,6 +61,14 @@ const User = sequelize.define('User', {
     sub: { type: Sequelize.STRING, primaryKey: true }
 }, {
     tableName: 'users'
+})
+// 定义 Shortcut 模型
+const Shortcut = sequelize.define('Shortcut', {
+    content: Sequelize.STRING,
+    sub: { type: Sequelize.STRING, primaryKey: true },
+
+}, {
+    tableName: 'shortcuts'
 })
 
 const mockApi = () => {
@@ -133,11 +141,7 @@ app.use(async ctx => {
         }
     }
 
-
-
-
-
-    //用户接口
+    //===============================用户接口===============================
     //查找用户
     else if (ctx.request.path === '/api/user/get' && ctx.method === 'POST') {
         try {
@@ -184,7 +188,6 @@ app.use(async ctx => {
 
         }
     }
-
     //插入用户
     else if (ctx.request.path === '/api/user/create' && ctx.method === 'POST') {
         try {
@@ -220,7 +223,45 @@ app.use(async ctx => {
 
         }
     }
+    //===============================shortcut接口===============================
+    //查找shortcut
+    else if (ctx.request.path === '/api/shortcut/get' && ctx.method === 'POST') {
+        try {
 
+            const { sub } = ctx.request.body
+            const shortcut = await Shortcut.findOne({ where: { sub } });
+            if (!shortcut) {
+                ctx.body = successModel([]);
+                return
+            }
+            ctx.body = successModel(JSON.parse(shortcut.content));
+        } catch (error) {
+            console.log('查找shortcutError:', error);
+            ctx.body = errorModel(error)
+        }
+    }
+    // 更新shortcut
+    else if (ctx.request.path === '/api/shortcut/update' && ctx.method === 'POST') {
+        try {
+            const { content, sub } = ctx.request.body
+            const shortcut = await Shortcut.findOne({ where: { sub } });
+            if (!shortcut) {
+                await Shortcut.create({
+                    sub,
+                    content
+                })
+            } else {
+                shortcut.content = content;
+                await shortcut.save();
+            }
+
+            ctx.body = successModel();
+        } catch (error) {
+            console.log('更新用户Error:', error);
+            ctx.body = errorModel(error)
+
+        }
+    }
 
     else {
         ctx.status = 404;

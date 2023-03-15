@@ -7,11 +7,14 @@ const LOGOUT = "LOGOUT"
 const LOGINSTATUS = 'LOGINSTATUS'
 const NOTLOGIN = 'NOTLOGIN'
 const UNKNOWN = 'UNKNOWN'
+const SETUSERINFO = 'SETUSERINFO'
+const SETSHORTCUTLIST = 'SETSHORTCUTLIST'
 
 
 let isLogin = false
 let TOKEN = '';
 let USERINFO = {}
+let SHORTCUTLIST = []
 
 async function sendToContentScript(payload) {
     const { type = UNKNOWN, data = {} } = payload
@@ -28,6 +31,8 @@ const getCurrentTab = async () => {
 
 // 当前标签页加载modal
 async function loadModal() {
+    await sendToContentScript({ type: SETUSERINFO, data: USERINFO })
+    await sendToContentScript({ type: SETSHORTCUTLIST, data: SHORTCUTLIST })
     const tab = await getCurrentTab();
     await chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -49,34 +54,61 @@ chrome.commands.onCommand.addListener(async (command) => {
 
 
 
+
+
 // =========================================================
-const loginHanlder = async () => {
+const loginAPI = async (userInfo) => {
+    const url = 'http://localhost:3001/api/user/create'
+    const response = await fetch(url,
+        {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userInfo)
+        })
+    const result = await response.json()
+    if (result.errno !== 0) {
+        throw new Error('API error:api/user/create');
+    }
+}
+const shortcutListAPI = async (sub) => {
+    const url = 'http://localhost:3001/api/shortcut/get'
+    const response = await fetch(url,
+        {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ sub })
+        })
+    const result = await response.json()
+    if (result.errno !== 0) {
+        throw new Error('API error:api/shortcut/get');
+    }
+    SHORTCUTLIST = result.data
+}
+
+
+const loginHandler = async () => {
     // 1.查看sub 查看用户是否存在
     // 2.如果不存在添加到数据库 +isLogin
     try {
-
         const getAuthTokenResult = await chrome.identity.getAuthToken({ interactive: true });
         TOKEN = getAuthTokenResult.token
         const fetch_url = `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${TOKEN}`
         const res = await fetch(fetch_url)
         const userInfo = await res.json()
         console.log('获取用户信息成功:', userInfo);
-        // 对接后端
-        // const loginURL = 'http://localhost:3001/api/user/create'
-        // await fetch(loginURL,
-        //     {
-        //         method: 'POST',
-        //         headers: {
-        //             'Accept': 'application/json',
-        //             'Content-Type': 'application/json'
-        //         },
-        //         body: JSON.stringify(userInfo)
-        //     })
+        await loginAPI(userInfo)
+        await shortcutListAPI(userInfo.sub)
         USERINFO = userInfo
         isLogin = true
         console.log('登录成功');
     } catch (error) {
-        console.log('loginHanlder Error:', JSON.stringify(error));
+        console.log('loginHandler Error:', JSON.stringify(error));
     }
 }
 
@@ -97,12 +129,11 @@ const wrapAsyncFunction = (listener) => (request, sender, sendResponse) => {
 };
 
 chrome.runtime.onMessage.addListener(wrapAsyncFunction(async (request, sender) => {
-    const { type } = request;
+    const { type, data } = request;
     console.log('background-收到消息:', request);
     if (type === LOGIN) {
-        await loginHanlder()
+        await loginHandler()
         return { isLogin, userInfo: USERINFO }
-
     }
     else if (type === LOGOUT) {
         await logoutHanlder()
@@ -110,6 +141,11 @@ chrome.runtime.onMessage.addListener(wrapAsyncFunction(async (request, sender) =
     else if (type === LOGINSTATUS) {
         return { isLogin, userInfo: USERINFO }
     }
+    else if (type === SETSHORTCUTLIST) {
+        SHORTCUTLIST = data
+        return {}
+    }
+
     else if (type === UNKNOWN) {
         alert('UNKNOWN Type')
     }

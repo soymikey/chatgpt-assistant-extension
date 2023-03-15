@@ -35,6 +35,7 @@ function App() {
   const [userInfo, setUserInfo] = useState<UserInfoType>({
     username: "",
     userId: "",
+    sub: "",
   });
   const [highlightContent, setHighlightContent] = useState(HIGHLIGHTCONTENT);
   const [shortcutList, setShortcutList] = useState<ShortcutType[]>([]);
@@ -51,22 +52,6 @@ function App() {
 
   function insideClick(e: any) {
     e.stopPropagation();
-  }
-
-  async function getUserInfo() {
-    try {
-      const { data } = await API.post<CustomResponseType>(`/getUser`, {
-        userId: "123",
-      });
-      if (data.errno === -1) {
-        return;
-      }
-      const { username, userId, shortcutList = [] } = data.data;
-      setUserInfo({ username, userId });
-      setShortcutList(shortcutList);
-    } catch (error) {
-      console.error(error);
-    }
   }
 
   function shortcutClickHandler(value: string) {
@@ -132,12 +117,16 @@ function App() {
     setEditId("");
     const shortcutList_ = shortcutList.filter((i) => i.title.trim());
     setShortcutList(shortcutList_);
-    const { data } = await API.post<CustomResponseType>(`/updateUser`, {
-      userId: userInfo.userId,
-      shortcutList: shortcutList_,
+    const { data } = await API.post<CustomResponseType>(`/shortcut/update`, {
+      sub: userInfo.sub,
+      content: JSON.stringify(shortcutList_),
     });
 
     if (data.errno === 0) {
+      await chrome.runtime.sendMessage({
+        type: "SETSHORTCUTLIST",
+        data: shortcutList_,
+      });
       setIsEdit(false);
       setTitle(HOMETITLE);
     }
@@ -150,7 +139,9 @@ function App() {
 
   useEffect(() => {
     inputRef.current!.focus();
-    getUserInfo();
+    const CHATGPT_ASSISTANT = window.CHATGPT_ASSISTANT;
+    setUserInfo(CHATGPT_ASSISTANT.userInfo);
+    setShortcutList(CHATGPT_ASSISTANT.shortcutList);
   }, []);
 
   return (
@@ -159,7 +150,10 @@ function App() {
         <Spin spinning={loading}>
           <div className="assistant-header">
             <div className="assistant-header-left"></div>
-            <div className="assistant-header-content">{title}</div>
+            <div className="assistant-header-content">
+              {title}
+              {userInfo.sub}
+            </div>
             <CloseCircleOutlined
               style={{ fontSize: "20px" }}
               onClick={removeApp}
