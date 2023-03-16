@@ -38,8 +38,14 @@ function App() {
   const [editId, setEditId] = useState(""); //编辑的快捷键id
 
   const [userInfo, setUserInfo] = useState<UserInfoType>({
-    username: "",
-    userId: "",
+    id: "",
+    email: "",
+    email_verified: "",
+    family_name: "",
+    given_name: "",
+    locale: "",
+    name: "",
+    picture: "",
     sub: "",
   });
   const [highlightContent, setHighlightContent] = useState(HIGHLIGHTCONTENT);
@@ -73,6 +79,7 @@ function App() {
     try {
       setLoading(true);
       const { data } = await API.post<CustomResponseType>("/getAnswer", {
+        sub: userInfo.sub,
         userInput,
         highlightContent,
       });

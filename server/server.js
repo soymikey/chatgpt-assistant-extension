@@ -4,7 +4,6 @@ import bodyParser from 'koa-bodyparser'
 import onerror from 'koa-onerror'
 import morgan from "koa-morgan";
 import path from "path";
-import Sequelize from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
 import { ChatGPTAPI } from 'chatgpt'
@@ -16,69 +15,16 @@ const __dirname = path.dirname(__filename);
 
 
 import config from './config.js'
-import db from './db.js'
 import { errorModel, successModel } from './tools.js';
+import { User, Shortcut, Question } from './sequelize.js';
+import { mockApi } from './mock.js';
 const app = new Koa();
 const api = new ChatGPTAPI({
-    apiKey: config.chatGPTAPI
+    apiKey: config.chatGPTAPI,
+    //这个是chatgpt 4 还未开放
+    // completionParams: { model: 'gpt-4' },
+    // maxModelTokens: 8100 
 })
-
-// 初始化 Sequelize 实例
-const sequelize = new Sequelize('chatgpt-assistant', 'root', 'yoursecurepassword', {
-    host: 'localhost',
-    dialect: 'mysql',
-    port: 3306
-});
-// 测试数据库连接
-async function testConnection() {
-    try {
-        await sequelize.authenticate();
-        console.log('Connection has been established successfully.');
-    } catch (error) {
-        console.error('Unable to connect to the database:', error);
-    }
-}
-
-// 调用测试连接函数
-testConnection();
-
-// 定义 test 模型
-// const Test = sequelize.define('Test', {
-//     name: Sequelize.STRING
-// }, {
-//     tableName: 'tests'
-// })
-// 定义 User 模型
-const User = sequelize.define('User', {
-    id: Sequelize.STRING,
-    email: Sequelize.STRING,
-    email_verified: Sequelize.BOOLEAN,
-    family_name: Sequelize.STRING,
-    given_name: Sequelize.STRING,
-    locale: Sequelize.STRING,
-    name: Sequelize.STRING,
-    picture: Sequelize.STRING,
-    sub: { type: Sequelize.STRING, primaryKey: true }
-}, {
-    tableName: 'users'
-})
-// 定义 Shortcut 模型
-const Shortcut = sequelize.define('Shortcut', {
-    content: Sequelize.STRING,
-    sub: { type: Sequelize.STRING, primaryKey: true },
-
-}, {
-    tableName: 'shortcuts'
-})
-
-const mockApi = () => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            resolve({ text: '人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。人生的意义是什么？我想说的是，人生的意义就在于你自己，只要你坚持追求自己的目标，不断努力，不断实现自己的理想，那么你的人生才有意义。' })
-        }, 1000);
-    });
-
-}
 
 //跨域控制
 // app.use(async (ctx, next) => {
@@ -97,17 +43,17 @@ app.use(
         }
     })
 );
-
+//日志
 const logFileName = path.join(__dirname, "logs", "access.log");
 const writeStream = fs.createWriteStream(logFileName, {
     flags: "a",
 });
+
 app.use(
     morgan("combined", {
         stream: writeStream,
     })
 );
-
 
 app.use(async (ctx, next) => {
     const start = Date.now();
@@ -119,14 +65,13 @@ app.use(async (ctx, next) => {
 
 
 
-// response
-
+// 请求处理
 app.use(async ctx => {
 
     //请求
     if (ctx.request.path === '/api/getAnswer' && ctx.method === 'POST') {
         try {
-            const { userInput = '', highlightContent = '' } = ctx.request.body
+            const { userInput = '', highlightContent = '', sub = '' } = ctx.request.body
             const questionContent = `${userInput}\n${highlightContent}`
             console.log('问题:==========================================',);
             console.log(questionContent);
@@ -138,6 +83,11 @@ app.use(async ctx => {
         } catch (error) {
             console.log('获取答案Error:', error);
             ctx.body = errorModel(error)
+        } finally {
+            Question.create({
+                sub,
+                content: questionContent
+            })
         }
     }
 
