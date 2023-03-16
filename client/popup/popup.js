@@ -9,7 +9,7 @@ const LOGOUT = "LOGOUT"
 const LOGINSTATUS = 'LOGINSTATUS'
 const NOTLOGIN = 'NOTLOGIN'
 const UNKNOWN = 'UNKNOWN'
-
+const GETUSERINFO = 'GETUSERINFO'
 
 //工具类函数
 async function sendToBackground(payload) {
@@ -26,22 +26,38 @@ const getCurrentTab = async () => {
 //元素
 const loginButton = document.getElementsByClassName('login-button')[0]
 const userInfoElement = document.getElementsByClassName('userinfo-wrapper')[0]
+const userInfoNameElement = document.getElementsByClassName('userinfo-name')[0]
+const userInfoEmailElement = document.getElementsByClassName('userinfo-email')[0]
+const loadingElement = document.getElementsByClassName('loading')[0]
 
+
+
+const loginState = (userInfo) => {
+    userInfoNameElement.innerHTML = userInfo.name
+    userInfoEmailElement.innerHTML = userInfo.email
+    loginButton.innerHTML = 'Logout'
+    loginButton.classList.add('logout')
+}
+const logoutState = () => {
+    userInfoNameElement.innerHTML = ''
+    userInfoEmailElement.innerHTML = ''
+    loginButton.innerHTML = 'Login with Google'
+    loginButton.classList.remove('logout')
+}
 
 //监听登录
 loginButton.addEventListener("click", async () => {
     const { isLogin } = await sendToBackground({ type: LOGINSTATUS })
-    console.log('登录状态:', isLogin);
     if (isLogin) {
         await sendToBackground({ type: LOGOUT })
-        userInfoElement.innerHTML = ''
-        loginButton.innerHTML = 'Login with Google'
-        loginButton.classList.remove('logout')
+        logoutState()
     } else {
-        const loginResult = await sendToBackground({ type: LOGIN })
-        userInfoElement.innerHTML = loginResult.userInfo.name
-        loginButton.innerHTML = 'Logout'
-        loginButton.classList.add('logout')
+        loadingElement.classList.add("visible")
+        await sendToBackground({ type: LOGIN })
+        const { userInfo } = await sendToBackground({ type: GETUSERINFO });
+        loginState(userInfo)
+        loadingElement.classList.remove("visible")
+
     }
 });
 
@@ -49,16 +65,13 @@ loginButton.addEventListener("click", async () => {
 
 //初始化popup页面状态
 async function init() {
-    const { isLogin, userInfo } = await sendToBackground({ type: LOGINSTATUS });
+    const { isLogin } = await sendToBackground({ type: LOGINSTATUS });
     loginButton.innerHTML = isLogin ? 'Logout' : 'Login with Google'
     if (isLogin) {
-        userInfoElement.innerHTML = userInfo.name
-        loginButton.innerHTML = 'Logout'
-        loginButton.classList.add('logout')
+        const { userInfo } = await sendToBackground({ type: GETUSERINFO });
+        loginState(userInfo)
     } else {
-        userInfoElement.innerHTML = ''
-        loginButton.innerHTML = 'Login with Google'
-        loginButton.classList.remove('logout')
+        logoutState()
     }
 }
 

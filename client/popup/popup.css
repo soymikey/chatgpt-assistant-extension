@@ -248,6 +248,7 @@ mark {
   background-color: #feffe6;
   padding: 0.2em;
 }
+
 #popup {
   width: 350px;
   height: 80px;
@@ -272,7 +273,14 @@ mark {
   align-items: center;
   height: 100%;
 }
-
+.userinfo-wrapper {
+}
+.userinfo-name {
+  text-align: center;
+}
+.userinfo-email {
+  text-align: center;
+}
 .login-button {
   font-family: Roboto, sans-serif;
   font-weight: 0;
@@ -306,4 +314,39 @@ mark {
 .logout:hover {
   background-color: #991b1b;
   border: solid 2px #991b1b;
+}
+
+.loading {
+  background: black;
+  opacity: 0.2;
+  z-index: 2;
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  display: none;
+}
+.loading:after {
+  content: " ";
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 8px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  border-color: #fff transparent #fff transparent;
+  animation: loading 1.2s linear infinite;
+}
+.visible {
+  display: flex;
+}
+@keyframes loading {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

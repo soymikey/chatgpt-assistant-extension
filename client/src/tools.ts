@@ -1,3 +1,5 @@
+import { PayloadType } from "./type";
+
 function uuidv4() {
   // @ts-ignore: Unreachable code error
   return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: any) =>
@@ -19,4 +21,9 @@ function truncateString(str: string, num: number) {
 function copyToClipboard(text: string) {
   navigator.clipboard.writeText(text);
 }
-export { uuidv4, truncateString, copyToClipboard };
+
+async function sendToBackground(payload: PayloadType) {
+  const { type = "UNKNOWN", data = {} } = payload;
+  return await chrome.runtime.sendMessage({ type, data });
+}
+export { uuidv4, truncateString, copyToClipboard, sendToBackground };

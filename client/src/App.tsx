@@ -15,7 +15,12 @@ import {
 
 import "./App.css";
 import { CustomResponseType, ShortcutType, UserInfoType } from "./type";
-import { copyToClipboard, truncateString, uuidv4 } from "./tools";
+import {
+  copyToClipboard,
+  sendToBackground,
+  truncateString,
+  uuidv4,
+} from "./tools";
 import API from "./baseApi";
 
 const { TextArea } = Input;
@@ -123,10 +128,7 @@ function App() {
     });
 
     if (data.errno === 0) {
-      await chrome.runtime.sendMessage({
-        type: "SETSHORTCUTLIST",
-        data: shortcutList_,
-      });
+      await sendToBackground({ type: "SETSHORTCUTLIST", data: shortcutList_ });
       setIsEdit(false);
       setTitle(HOMETITLE);
     }
@@ -150,10 +152,7 @@ function App() {
         <Spin spinning={loading}>
           <div className="assistant-header">
             <div className="assistant-header-left"></div>
-            <div className="assistant-header-content">
-              {title}
-              {userInfo.sub}
-            </div>
+            <div className="assistant-header-content">{title}</div>
             <CloseCircleOutlined
               style={{ fontSize: "20px" }}
               onClick={removeApp}
