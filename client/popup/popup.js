@@ -6,10 +6,7 @@ console.log("popup loaded");
 //常量
 const LOGIN = "LOGIN"
 const LOGOUT = "LOGOUT"
-const LOGINSTATUS = 'LOGINSTATUS'
-const NOTLOGIN = 'NOTLOGIN'
-const UNKNOWN = 'UNKNOWN'
-const GETUSERINFO = 'GETUSERINFO'
+
 
 //工具类函数
 async function sendToBackground(payload) {
@@ -32,9 +29,10 @@ const loadingElement = document.getElementsByClassName('loading')[0]
 
 
 
-const loginState = (userInfo) => {
-    userInfoNameElement.innerHTML = userInfo.name
-    userInfoEmailElement.innerHTML = userInfo.email
+const loginState = async () => {
+    const { USERINFO } = await chrome.storage.sync.get("USERINFO")
+    userInfoNameElement.innerHTML = USERINFO.name
+    userInfoEmailElement.innerHTML = USERINFO.email
     loginButton.innerHTML = 'Logout'
     loginButton.classList.add('logout')
 }
@@ -47,15 +45,14 @@ const logoutState = () => {
 
 //监听登录
 loginButton.addEventListener("click", async () => {
-    const { isLogin } = await sendToBackground({ type: LOGINSTATUS })
-    if (isLogin) {
+    const { ISLOGIN } = await chrome.storage.sync.get("ISLOGIN")
+    if (ISLOGIN) {
         await sendToBackground({ type: LOGOUT })
-        logoutState()
+        await logoutState()
     } else {
         loadingElement.classList.add("visible")
         await sendToBackground({ type: LOGIN })
-        const { userInfo } = await sendToBackground({ type: GETUSERINFO });
-        loginState(userInfo)
+        loginState()
         loadingElement.classList.remove("visible")
 
     }
@@ -65,13 +62,12 @@ loginButton.addEventListener("click", async () => {
 
 //初始化popup页面状态
 async function init() {
-    const { isLogin } = await sendToBackground({ type: LOGINSTATUS });
-    loginButton.innerHTML = isLogin ? 'Logout' : 'Login with Google'
-    if (isLogin) {
-        const { userInfo } = await sendToBackground({ type: GETUSERINFO });
-        loginState(userInfo)
+    const { ISLOGIN } = await chrome.storage.sync.get("ISLOGIN")
+    loginButton.innerHTML = ISLOGIN ? 'Logout' : 'Login with Google'
+    if (ISLOGIN) {
+        loginState()
     } else {
-        logoutState()
+        await logoutState()
     }
 }
 

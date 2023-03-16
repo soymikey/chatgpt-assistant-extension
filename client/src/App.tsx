@@ -148,9 +148,13 @@ function App() {
 
   useEffect(() => {
     inputRef.current!.focus();
-    const CHATGPT_ASSISTANT = window.CHATGPT_ASSISTANT;
-    setUserInfo(CHATGPT_ASSISTANT.userInfo);
-    setShortcutList(CHATGPT_ASSISTANT.shortcutList);
+
+    chrome.storage.sync.get("USERINFO", (data: any) =>
+      setUserInfo(data.USERINFO)
+    );
+    chrome.storage.sync.get("SHORTCUTLIST", (data: any) =>
+      setShortcutList(data.SHORTCUTLIST)
+    );
   }, []);
 
   return (

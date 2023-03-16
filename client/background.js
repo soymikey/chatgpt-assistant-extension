@@ -1,21 +1,14 @@
 // //background.js 只会执行一次
 console.log("background loaded");
+chrome.storage.sync.clear()
 
 //常量
 const LOGIN = "LOGIN"
 const LOGOUT = "LOGOUT"
-const LOGINSTATUS = 'LOGINSTATUS'
 const NOTLOGIN = 'NOTLOGIN'
-const UNKNOWN = 'UNKNOWN'
-const SETUSERINFO = 'SETUSERINFO'
 const SETSHORTCUTLIST = 'SETSHORTCUTLIST'
-const GETUSERINFO = 'GETUSERINFO'
+const UNKNOWN = 'UNKNOWN'
 
-
-let ISLOGIN = false
-let TOKEN = '';
-let USERINFO = {}
-let SHORTCUTLIST = []
 
 async function sendToContentScript(payload) {
     const { type = UNKNOWN, data = {} } = payload
@@ -32,8 +25,7 @@ const getCurrentTab = async () => {
 
 // 当前标签页加载modal
 async function loadModal() {
-    await sendToContentScript({ type: SETUSERINFO, data: USERINFO })
-    await sendToContentScript({ type: SETSHORTCUTLIST, data: SHORTCUTLIST })
+
     const tab = await getCurrentTab();
     await chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -44,6 +36,7 @@ async function loadModal() {
 // =========================================================
 //监听control+B 快捷键
 chrome.commands.onCommand.addListener(async (command) => {
+    const { ISLOGIN } = await chrome.storage.sync.get("ISLOGIN")
     if (!ISLOGIN) {
         await sendToContentScript({ type: NOTLOGIN })
         return
@@ -54,11 +47,9 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 
-
-
-
 // =======================API==================================
-const createUserApi = async (userInfo) => {
+const createUserApi = async () => {
+    const { USERINFO } = await chrome.storage.sync.get("USERINFO")
     const url = 'http://localhost:3001/api/user/create'
     const response = await fetch(url,
         {
@@ -67,7 +58,7 @@ const createUserApi = async (userInfo) => {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(userInfo)
+            body: JSON.stringify(USERINFO)
         })
     const result = await response.json()
     if (result.errno !== 0) {
@@ -75,7 +66,9 @@ const createUserApi = async (userInfo) => {
     }
 }
 
-const shortcutListAPI = async (sub) => {
+const shortcutListAPI = async () => {
+    const { USERINFO } = await chrome.storage.sync.get("USERINFO")
+
     const url = 'http://localhost:3001/api/shortcut/get'
     const response = await fetch(url,
         {
@@ -84,50 +77,51 @@ const shortcutListAPI = async (sub) => {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ sub })
+            body: JSON.stringify({ sub: USERINFO.sub })
         })
     const result = await response.json()
     if (result.errno !== 0) {
         throw new Error('API error:api/shortcut/get');
     }
-    SHORTCUTLIST = result.data
+    await chrome.storage.sync.set({ SHORTCUTLIST: result.data })
+
 }
 
 // =======================google API==================================
 const getAuthToken = async () => {
     const response = await chrome.identity.getAuthToken({ interactive: true });
-    return response.token
+    await chrome.storage.sync.set({ TOKEN: response.token })
 }
-const getUserInfo = async (TOKEN) => {
+
+const getUserInfo = async () => {
+    const { TOKEN } = await chrome.storage.sync.get("TOKEN")
     const url = `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${TOKEN}`
     const res = await fetch(url)
     const userInfo = await res.json()
-    return userInfo
-
+    await chrome.storage.sync.set({ USERINFO: userInfo })
 }
 
 const loginHandler = async () => {
     try {
-        TOKEN = await getAuthToken()//获取用户token
-        const userInfo = await getUserInfo(TOKEN)//获取用户信息
-        console.log('获取用户信息成功:', userInfo);
-        await createUserApi(userInfo)//创建用户
-        await shortcutListAPI(userInfo.sub)//获取用户快捷键列表
-        USERINFO = userInfo
-        ISLOGIN = true
+        await getAuthToken()//获取用户token
+        await getUserInfo()//获取用户信息
+        await createUserApi()//创建用户
+        await shortcutListAPI()//获取用户快捷键列表
+        await chrome.storage.sync.set({ ISLOGIN: true });
         console.log('登录成功');
     } catch (error) {
-        console.log('loginHandler Error:', JSON.stringify(error));
+        console.log('loginHandler Error:', error);
     }
 }
 
 
 const logoutHanlder = async () => {
+    const { TOKEN } = await chrome.storage.sync.get('TOKEN')
     await chrome.identity.removeCachedAuthToken({ token: TOKEN });
-    USERINFO = {}
-    ISLOGIN = false
-    TOKEN = ''
-    SHORTCUTLIST = []
+    await chrome.storage.sync.remove("TOKEN")
+    await chrome.storage.sync.remove("ISLOGIN")
+    await chrome.storage.sync.remove("USERINFO")
+    await chrome.storage.sync.remove("SHORTCUTLIST")
     console.log('退出成功');
 }
 
@@ -148,18 +142,10 @@ chrome.runtime.onMessage.addListener(wrapAsyncFunction(async (request, sender) =
     else if (type === LOGOUT) {
         await logoutHanlder()
     }
-    else if (type === LOGINSTATUS) {
-        return { isLogin: ISLOGIN }
-    }
     else if (type === SETSHORTCUTLIST) {
-        SHORTCUTLIST = data
-        return {}
+        await chrome.storage.sync.set({ SHORTCUTLIST: data })
     }
-    else if (type === GETUSERINFO) {
-        return { userInfo: USERINFO }
-    }
-
-    else if (type === UNKNOWN) {
+    else {
         alert('UNKNOWN Type')
     }
 })

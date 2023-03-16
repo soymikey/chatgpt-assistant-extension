@@ -1,10 +1,11 @@
 {
-  "name": "React Extensions",
-  "description": "Base Level Extension",
+  "name": "ChatGPT Assistant",
+  "description": "Clicking Cmd+B on any website can get you ChatGPT response, including Google, Gmail, and over 10 million other websites. It's a free and privacy-focused service.",
   "version": "1.0",
   "manifest_version": 3,
   "permissions": [
     "tabs",
+    "storage",
     "activeTab",
     "scripting",
     "identity",
@@ -24,7 +25,13 @@
   },
   "action": {
     "default_popup": "index.html",
-    "default_icon": "logo192.png"
+    "default_icon": "logo.png"
+  },
+  "icons": {
+    "16": "logo.png",
+    "32": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
   },
   "commands": {
     "show-modal": {
