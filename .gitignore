@@ -1,4 +1,4 @@
 node_modules/
 build/
 storage.json
-server/logs
+server/logs/access.log
