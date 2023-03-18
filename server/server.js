@@ -69,7 +69,11 @@ app.use(async (ctx, next) => {
 app.use(async ctx => {
 
     //请求
-    if (ctx.request.path === '/api/getAnswer' && ctx.method === 'POST') {
+    if (ctx.request.path === '/' && ctx.method === 'GET') {
+        ctx.body = successModel({ data: 'test' })
+    }
+    //请求
+    else if (ctx.request.path === '/api/getAnswer' && ctx.method === 'POST') {
         try {
             const { userInput = '', highlightContent = '', sub = '' } = ctx.request.body
             const questionContent = `${userInput}\n${highlightContent}`
