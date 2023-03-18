@@ -31,6 +31,7 @@ const api = new ChatGPTAPI({
 //     ctx.set('Access-Control-Allow-Origin', 'https://streetmusicadmin.migaox.com');
 //     await next();
 //   });
+app.server.timeout = 30000; // 30秒超时时间
 app.use(cors());
 // error handler
 onerror(app);
