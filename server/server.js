@@ -31,7 +31,6 @@ const api = new ChatGPTAPI({
 //     ctx.set('Access-Control-Allow-Origin', 'https://streetmusicadmin.migaox.com');
 //     await next();
 //   });
-app.server.timeout = 30000; // 30秒超时时间
 app.use(cors());
 // error handler
 onerror(app);
@@ -77,8 +76,8 @@ app.use(async ctx => {
             console.log('问题:==========================================',);
             console.log(questionContent);
             console.log("==========================================");
-            // const res = await mockApi()
-            const res = await api.sendMessage(questionContent)
+            const res = await mockApi()
+            // const res = await api.sendMessage(questionContent)
             Question.create({ sub, content: questionContent })
             console.log("答案:", res.text);
             ctx.body = successModel(res)
@@ -218,3 +217,6 @@ app.use(async ctx => {
 
 
 app.listen(3001);
+app.on("error", (err, ctx) => {
+    console.error("server error", err, ctx);
+});
