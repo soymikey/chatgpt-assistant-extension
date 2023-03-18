@@ -76,8 +76,8 @@ app.use(async ctx => {
             console.log('问题:==========================================',);
             console.log(questionContent);
             console.log("==========================================");
-            const res = await mockApi()
-            // const res = await api.sendMessage(questionContent)
+            // const res = await mockApi()
+            const res = await api.sendMessage(questionContent)
             Question.create({ sub, content: questionContent })
             console.log("答案:", res.text);
             ctx.body = successModel(res)
